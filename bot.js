@@ -70,6 +70,7 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
   // !close
+  // !close
   if (message.content.startsWith("!close")) {
     const channel = message.channel;
 
@@ -82,7 +83,9 @@ client.on("messageCreate", async (message) => {
     const canClose = member.roles.cache.has(config.CLOSE_ROLE_ID);
 
     if (!canClose) {
-      return message.reply("❌ Você não tem permissão para fechar este ticket.");
+      return message.reply(
+        "❌ Você não tem permissão para fechar este ticket."
+      );
     }
 
     await message.reply("🔒 Fechando o ticket em 5 segundos...");
@@ -92,6 +95,13 @@ client.on("messageCreate", async (message) => {
 
   // !feedback
   if (message.content === "!feedback") {
+    const member = await message.guild.members.fetch(message.author.id);
+    const hasPermission = member.roles.cache.has(config.CLOSE_ROLE_ID);
+
+    if (!hasPermission) {
+      return message.reply("❌ Você não tem permissão para usar este comando.");
+    }
+
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("feedback_with_user")
@@ -129,7 +139,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
         .setRequired(true)
         .setPlaceholder("Escreva seu feedback...");
 
-      const firstActionRow = new ActionRowBuilder().addComponents(feedbackInput);
+      const firstActionRow = new ActionRowBuilder().addComponents(
+        feedbackInput
+      );
       modal.addComponents(firstActionRow);
 
       await interaction.showModal(modal);
@@ -147,14 +159,33 @@ client.on(Events.InteractionCreate, async (interaction) => {
           config.FEEDBACK_CHANNEL_ID
         );
 
-        let content;
+        const { EmbedBuilder } = require("discord.js");
+
+        const embed = new EmbedBuilder()
+          .setTitle("📣 Novo Feedback Recebido")
+          .setColor(
+            interaction.customId === "modal_feedback_with_user"
+              ? 0x2ecc71
+              : 0x95a5a6
+          )
+          .setDescription(feedback)
+          .setTimestamp();
+
         if (interaction.customId === "modal_feedback_with_user") {
-          content = `📢 **Feedback de:** <@${interaction.user.id}>\n\n${feedback}`;
+          embed.setAuthor({
+            name: interaction.user.username,
+            iconURL: interaction.user.displayAvatarURL(),
+          });
+          embed.setFooter({ text: "Enviado com identificação" });
         } else {
-          content = `📢 **Feedback Anônimo:**\n\n${feedback}`;
+          embed.setAuthor({
+            name: "Anônimo",
+            iconURL: "https://i.imgur.com/8b6V4fL.png",
+          });
+          embed.setFooter({ text: "Enviado anonimamente" });
         }
 
-        await feedbackChannel.send({ content });
+        await feedbackChannel.send({ embeds: [embed] });
 
         await interaction.reply({
           content: "✅ Obrigado pelo seu feedback!",
