@@ -78,7 +78,9 @@ client.on("messageCreate", async (message) => {
     }
 
     if (!member.roles.cache.has(config.CLOSE_ROLE_ID)) {
-      return message.reply("❌ Você não tem permissão para fechar este ticket.");
+      return message.reply(
+        "❌ Você não tem permissão para fechar este ticket."
+      );
     }
 
     await message.reply("🔒 Fechando o ticket em 5 segundos...");
@@ -86,7 +88,7 @@ client.on("messageCreate", async (message) => {
     return;
   }
 
-  // !feedback
+  // !feedback → só staff pode abrir o painel
   if (message.content === "!feedback") {
     if (!member.roles.cache.has(config.CLOSE_ROLE_ID)) {
       return message.reply("❌ Você não tem permissão para usar este comando.");
@@ -104,7 +106,7 @@ client.on("messageCreate", async (message) => {
     );
 
     await message.reply({
-      content: "Como deseja enviar seu feedback?",
+      content: "📩 Clique abaixo para enviar seu feedback:",
       components: [row],
     });
   }
@@ -113,47 +115,60 @@ client.on("messageCreate", async (message) => {
 // Interações: Botões e Modais
 client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isButton()) {
-    const member = await interaction.guild.members.fetch(interaction.user.id);
-
-    // Bloquear botões se o usuário não tiver a role
-    if (!member.roles.cache.has(config.CLOSE_ROLE_ID)) {
-      return interaction.reply({
-        content: "❌ Você não tem permissão para usar esta função.",
-        ephemeral: true,
-      });
-    }
-
+    // 👉 qualquer usuário pode usar os botões
     if (
       interaction.customId === "feedback_with_user" ||
       interaction.customId === "feedback_anonymous"
     ) {
       const modal = new ModalBuilder()
         .setCustomId(`modal_${interaction.customId}`)
-        .setTitle("📩 Envie seu feedback");
+        .setTitle("⭐ Avaliação de Serviço");
+
+      const ratingInput = new TextInputBuilder()
+        .setCustomId("rating_input")
+        .setLabel("Nota (1-5 estrelas)")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setPlaceholder("Ex: 5");
 
       const feedbackInput = new TextInputBuilder()
         .setCustomId("feedback_input")
-        .setLabel("Digite seu feedback aqui")
+        .setLabel("Comentário")
         .setStyle(TextInputStyle.Paragraph)
-        .setRequired(true)
+        .setRequired(false)
         .setPlaceholder("Escreva seu feedback...");
 
-      modal.addComponents(new ActionRowBuilder().addComponents(feedbackInput));
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(ratingInput),
+        new ActionRowBuilder().addComponents(feedbackInput)
+      );
+
       await interaction.showModal(modal);
     }
   }
 
   if (interaction.isModalSubmit()) {
     const isWithUser = interaction.customId === "modal_feedback_with_user";
-    const feedback = interaction.fields.getTextInputValue("feedback_input");
+    const rating = interaction.fields.getTextInputValue("rating_input");
+    const feedback =
+      interaction.fields.getTextInputValue("feedback_input") ||
+      "Sem comentário";
 
     try {
-      const feedbackChannel = await client.channels.fetch(config.FEEDBACK_CHANNEL_ID);
+      const feedbackChannel = await client.channels.fetch(
+        config.FEEDBACK_CHANNEL_ID
+      );
+
+      // converter número em estrelas
+      const stars = "⭐".repeat(Math.min(Math.max(Number(rating), 1), 5));
 
       const embed = new EmbedBuilder()
         .setColor(isWithUser ? 0x2ecc71 : 0x95a5a6)
-        .setTitle("⭐⭐⭐⭐⭐")
-        .setDescription(`> ${feedback}`)
+        .setTitle("📩 Novo Feedback")
+        .addFields(
+          { name: "⭐ Nota", value: stars, inline: true },
+          { name: "💬 Comentário", value: `> ${feedback}`, inline: false }
+        )
         .setTimestamp();
 
       if (isWithUser) {
