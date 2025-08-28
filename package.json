@@ -2,6 +2,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "discord.js": "^14.22.1",
+    "dotenv": "^17.2.1",
     "express": "^5.1.0"
   }
 }
