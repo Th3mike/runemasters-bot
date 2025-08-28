@@ -133,7 +133,56 @@ module.exports = (client, cooldowns, config) => {
             user.avatar ||
             member.user.displayAvatarURL({ dynamic: true, size: 256 }),
         },
-        fields: [...embed.fields],
+        fields: [
+          {
+            name: "🔪 Melee",
+            value: formData?.meleeWeapon || "Nenhum",
+            inline: true,
+          },
+          {
+            name: "🏹 Bow",
+            value: formData?.bow || "Nenhum",
+            inline: true,
+          },
+          {
+            name: "💎 Amuleto",
+            value: formData?.amulet || "Nenhum",
+            inline: true,
+          },
+          {
+            name: "📊 Stats",
+            value:
+              `Atk: ${formData.stats.attack}\n` +
+              `Str: ${formData.stats.strength}\n` +
+              `Def: ${formData.stats.defence}\n` +
+              `HP: ${formData.stats.hitpoints}\n` +
+              `Pray: ${formData.stats.prayer}\n` +
+              `Mag: ${formData.stats.magic}\n` +
+              `Range: ${formData.stats.ranged}`,
+          },
+          {
+            name: "📡 Parsec",
+            value: formData.useParsec ? "Sim" : "Não",
+            inline: true,
+          },
+          {
+            name: "🙏 Cox Prayers",
+            value: formData.coxPrayers ? "Sim" : "Não",
+            inline: true,
+          },
+          {
+            name: "🏹 Blowpipe",
+            value: formData.hasBlowpipe
+              ? `Sim (${formData.blowpipeDart || "N/A"})`
+              : "Não",
+            inline: true,
+          },
+          {
+            name: "💸 Preço",
+            value: `${price}M`,
+            inline: true,
+          },
+        ],
         timestamp: new Date(),
       };
 
