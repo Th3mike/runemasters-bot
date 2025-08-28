@@ -30,6 +30,11 @@ app.use(
 
 app.use(express.json());
 
+// 👉 rota raiz para o auto-ping
+app.get("/", (req, res) => {
+  res.send("Bot ativo 🚀");
+});
+
 // Discord Bot Setup
 const client = new Client({
   intents: [
@@ -61,6 +66,15 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`API rodando na porta ${PORT}`);
 });
+
+// Mantém a aplicação acordada no Render (auto-ping a cada 10 min)
+if (process.env.RENDER) {
+  setInterval(() => {
+    fetch("https://runemasters-bot.onrender.com")
+      .then((res) => console.log("Ping OK:", res.status))
+      .catch((err) => console.error("Ping falhou:", err));
+  }, 10 * 60 * 1000); // 10 minutos
+}
 
 client.once("ready", () => {
   console.log(`Bot logado como ${client.user.tag}`);
@@ -108,7 +122,6 @@ client.on("messageCreate", async (message) => {
 
   // !feedback → só staff pode abrir o painel
   if (message.content === "!feedback") {
-    // marca a mensagem como tratada para evitar duplicidade local
     handledMessages.add(message.id);
     setTimeout(() => handledMessages.delete(message.id), 60_000);
 
@@ -139,7 +152,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.inGuild()) return;
 
   if (interaction.isButton()) {
-    // 👉 qualquer usuário pode usar os botões
     if (
       interaction.customId === "feedback_with_user" ||
       interaction.customId === "feedback_anonymous"
@@ -194,10 +206,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       const embed = new EmbedBuilder()
         .setColor(isWithUser ? 0x2ecc71 : 0x95a5a6)
-        .setTitle("📬 Novo feedback")
+        .setTitle("Review")
         .addFields(
           {
-            name: "Nota",
             value: `${starsFromRating(rating)} \`(${rating}/5)\``,
             inline: true,
           },
