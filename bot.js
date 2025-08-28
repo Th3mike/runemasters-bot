@@ -11,7 +11,10 @@ const apiRoutes = require("./routes/api");
 const app = express();
 app.use(
   cors({
-    origin: "http://localhost:5173", // seu frontend
+    origin: [
+      "http://localhost:5173",
+      "https://runemasters-bot.onrender.com", 
+    ],
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
   })
