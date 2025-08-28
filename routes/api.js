@@ -1,6 +1,5 @@
 // routes/api.js
 const express = require("express");
-const { EmbedBuilder } = require("discord.js"); // Importa o EmbedBuilder do discord.js
 const router = express.Router();
 
 module.exports = (client, cooldowns, config) => {
@@ -9,7 +8,7 @@ module.exports = (client, cooldowns, config) => {
     CATEGORY_ID,
     STAFF_ROLE_ID,
     ORDERS_CHANNEL_ID,
-    ROLE_TO_ASSIGN_ID, // nova role para atribuição automática
+    ROLE_TO_ASSIGN_ID, // 👈 nova role para atribuição automática
   } = config;
 
   // POST /order
@@ -34,25 +33,37 @@ module.exports = (client, cooldowns, config) => {
       const guild = await client.guilds.fetch(GUILD_ID);
       const member = await guild.members.fetch(userId);
 
-      // Define a URL do avatar com fallback
-      const avatarUrl =
-        user.avatar && user.avatar !== ""
-          ? user.avatar
-          : member.user.displayAvatarURL({ dynamic: true, size: 256 });
+      // Declarar embed para uso depois do if
+      let embed;
 
       if (ORDERS_CHANNEL_ID) {
         const ordersChannel = await guild.channels.fetch(ORDERS_CHANNEL_ID);
 
-        // Cria o embed usando EmbedBuilder
-        const embed = new EmbedBuilder()
-          .setColor(0x9b59b6)
-          .setTitle("📦 Novo Pedido")
-          .setDescription(`Pedido de **${user.username}**`)
-          .setThumbnail(avatarUrl)
-          .addFields(
-            { name: "🔪 Melee", value: formData?.meleeWeapon || "Nenhum", inline: true },
-            { name: "🏹 Bow", value: formData?.bow || "Nenhum", inline: true },
-            { name: "💎 Amuleto", value: formData?.amulet || "Nenhum", inline: true },
+        embed = {
+          color: 0x9b59b6,
+          title: "📦 Novo Pedido",
+          description: `Pedido de **${user.username}**`,
+          thumbnail: {
+            url:
+              user.avatar ||
+              member.user.displayAvatarURL({ dynamic: true, size: 256 }),
+          },
+          fields: [
+            {
+              name: "🔪 Melee",
+              value: formData?.meleeWeapon || "Nenhum",
+              inline: true,
+            },
+            {
+              name: "🏹 Bow",
+              value: formData?.bow || "Nenhum",
+              inline: true,
+            },
+            {
+              name: "💎 Amuleto",
+              value: formData?.amulet || "Nenhum",
+              inline: true,
+            },
             {
               name: "📊 Stats",
               value:
@@ -64,24 +75,38 @@ module.exports = (client, cooldowns, config) => {
                 `Mag: ${formData.stats.magic}\n` +
                 `Range: ${formData.stats.ranged}`,
             },
-            { name: "📡 Parsec", value: formData.useParsec ? "Sim" : "Não", inline: true },
-            { name: "🙏 Cox Prayers", value: formData.coxPrayers ? "Sim" : "Não", inline: true },
             {
-              name: "🏹 Blowpipe",
-              value: formData.hasBlowpipe ? `Sim (${formData.blowpipeDart})` : "Não",
+              name: "📡 Parsec",
+              value: formData.useParsec ? "Sim" : "Não",
               inline: true,
             },
-            { name: "💸 Preço", value: `${price}M`, inline: true }
-          )
-          .setTimestamp(new Date());
+            {
+              name: "🙏 Cox Prayers",
+              value: formData.coxPrayers ? "Sim" : "Não",
+              inline: true,
+            },
+            {
+              name: "🏹 Blowpipe",
+              value: formData.hasBlowpipe
+                ? `Sim (${formData.blowpipeDart})`
+                : "Não",
+              inline: true,
+            },
+            { name: "💸 Preço", value: `${price}M`, inline: true },
+          ],
+          timestamp: new Date(),
+        };
 
         await ordersChannel.send({ embeds: [embed] });
+      } else {
+        // Caso não tenha o canal, evitar erro definindo embed vazio
+        embed = { fields: [] };
       }
 
       // Criar canal do ticket
       const ticketChannel = await guild.channels.create({
         name: `ticket-${member.user.username}`,
-        type: 0, // tipo texto
+        type: 0,
         parent: CATEGORY_ID,
         permissionOverwrites: [
           {
@@ -99,16 +124,18 @@ module.exports = (client, cooldowns, config) => {
         ],
       });
 
-      // Cria o embed do ticket, reutilizando os campos do embed anterior
-      const ticketEmbed = new EmbedBuilder()
-        .setColor(0x2ecc71)
-        .setTitle("🎫 Pedido Registrado")
-        .setDescription(
-          `Olá <@${userId}>, seu pedido foi registrado!\nNossa staff vai entrar em contato em breve.`
-        )
-        .setThumbnail(avatarUrl)
-        .addFields(embed.data.fields)
-        .setTimestamp(new Date());
+      const ticketEmbed = {
+        color: 0x2ecc71,
+        title: "🎫 Pedido Registrado",
+        description: `Olá <@${userId}>, seu pedido foi registrado!\nNossa staff vai entrar em contato em breve.`,
+        thumbnail: {
+          url:
+            user.avatar ||
+            member.user.displayAvatarURL({ dynamic: true, size: 256 }),
+        },
+        fields: [...embed.fields],
+        timestamp: new Date(),
+      };
 
       await ticketChannel.send({ embeds: [ticketEmbed] });
 
