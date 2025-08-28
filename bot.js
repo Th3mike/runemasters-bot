@@ -1,11 +1,22 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const { Client, GatewayIntentBits, PermissionsBitField } = require("discord.js");
+const {
+  Client,
+  GatewayIntentBits,
+  PermissionsBitField,
+} = require("discord.js");
 const apiRoutes = require("./routes/api");
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173", // seu frontend
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
+
 app.use(express.json());
 
 // Discord Bot Setup
