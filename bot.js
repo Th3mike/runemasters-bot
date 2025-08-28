@@ -5,9 +5,17 @@ const {
   PermissionsBitField,
 } = require("discord.js");
 const express = require("express");
+const cors = require("cors");
 
 const app = express();
 app.use(express.json());
+
+// CORS liberado
+app.use(cors({
+  origin: "*", 
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"],
+}));
 
 // --- Discord Bot Setup ---
 const client = new Client({
