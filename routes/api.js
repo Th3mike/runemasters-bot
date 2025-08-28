@@ -215,5 +215,18 @@ module.exports = (client, cooldowns, config) => {
     }
   });
 
+  router.post("/check-membership", async (req, res) => {
+    const { discordId } = req.body;
+
+    try {
+      const guild = await client.guilds.fetch(config.GUILD_ID);
+      const member = await guild.members.fetch(discordId);
+      return res.json({ inGuild: !!member });
+    } catch (error) {
+      console.log("Usuário não está no servidor:", discordId);
+      return res.json({ inGuild: false });
+    }
+  });
+
   return router;
 };
