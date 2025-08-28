@@ -51,6 +51,9 @@ const config = {
   FEEDBACK_CHANNEL_ID: "1410747614143451196",
 };
 
+// Anti-duplicidade (no MESMO processo)
+const handledMessages = new Set();
+
 // Rotas da API
 app.use("/", apiRoutes(client, cooldowns, config));
 
@@ -63,9 +66,24 @@ client.once("ready", () => {
   console.log(`Bot logado como ${client.user.tag}`);
 });
 
+// Utils
+function parseRating(input) {
+  const num = Number(String(input).trim());
+  if (!Number.isFinite(num)) return null;
+  const clamped = Math.max(1, Math.min(5, Math.round(num)));
+  return clamped;
+}
+
+function starsFromRating(r) {
+  return "⭐".repeat(r) + "☆".repeat(5 - r);
+}
+
 // Comando !close e !feedback
 client.on("messageCreate", async (message) => {
-  if (message.author.bot) return;
+  if (message.author.bot || !message.guild) return;
+
+  // anti-duplicidade local (se o handler for acidentalmente registrado 2x)
+  if (handledMessages.has(message.id)) return;
 
   const member = await message.guild.members.fetch(message.author.id);
 
@@ -90,6 +108,10 @@ client.on("messageCreate", async (message) => {
 
   // !feedback → só staff pode abrir o painel
   if (message.content === "!feedback") {
+    // marca a mensagem como tratada para evitar duplicidade local
+    handledMessages.add(message.id);
+    setTimeout(() => handledMessages.delete(message.id), 60_000);
+
     if (!member.roles.cache.has(config.CLOSE_ROLE_ID)) {
       return message.reply("❌ Você não tem permissão para usar este comando.");
     }
@@ -106,7 +128,7 @@ client.on("messageCreate", async (message) => {
     );
 
     await message.reply({
-      content: "📩 Clique abaixo para enviar seu feedback:",
+      content: "📬 Clique abaixo para enviar seu feedback:",
       components: [row],
     });
   }
@@ -114,26 +136,28 @@ client.on("messageCreate", async (message) => {
 
 // Interações: Botões e Modais
 client.on(Events.InteractionCreate, async (interaction) => {
+  if (!interaction.inGuild()) return;
+
   if (interaction.isButton()) {
-    // 👉 Removemos a checagem da role aqui, qualquer usuário pode clicar
+    // 👉 qualquer usuário pode usar os botões
     if (
       interaction.customId === "feedback_with_user" ||
       interaction.customId === "feedback_anonymous"
     ) {
       const modal = new ModalBuilder()
         .setCustomId(`modal_${interaction.customId}`)
-        .setTitle("⭐ Avaliação de Serviço");
+        .setTitle("Avaliação de Serviço");
 
       const ratingInput = new TextInputBuilder()
         .setCustomId("rating_input")
-        .setLabel("Nota (1-5 estrelas)")
+        .setLabel("Nota (1-5)")
         .setStyle(TextInputStyle.Short)
         .setRequired(true)
-        .setPlaceholder("Ex: 5");
+        .setPlaceholder("Ex.: 5");
 
       const feedbackInput = new TextInputBuilder()
         .setCustomId("feedback_input")
-        .setLabel("Comentário")
+        .setLabel("Comentário (opcional)")
         .setStyle(TextInputStyle.Paragraph)
         .setRequired(false)
         .setPlaceholder("Escreva seu feedback...");
@@ -149,25 +173,39 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   if (interaction.isModalSubmit()) {
     const isWithUser = interaction.customId === "modal_feedback_with_user";
-    const rating = interaction.fields.getTextInputValue("rating_input");
+    const ratingRaw = interaction.fields.getTextInputValue("rating_input");
+    const rating = parseRating(ratingRaw);
+
+    if (!rating) {
+      return interaction.reply({
+        content: "❌ Nota inválida. Digite um número de 1 a 5.",
+        ephemeral: true,
+      });
+    }
+
     const feedback =
-      interaction.fields.getTextInputValue("feedback_input") ||
-      "Sem comentário";
+      interaction.fields.getTextInputValue("feedback_input")?.trim() ||
+      "Sem comentário.";
 
     try {
       const feedbackChannel = await client.channels.fetch(
         config.FEEDBACK_CHANNEL_ID
       );
 
-      // converter número em estrelas
-      const stars = "⭐".repeat(Math.min(Math.max(Number(rating), 1), 5));
-
       const embed = new EmbedBuilder()
         .setColor(isWithUser ? 0x2ecc71 : 0x95a5a6)
-        .setTitle("📩 Novo Feedback")
+        .setTitle("📬 Novo feedback")
         .addFields(
-          { name: "⭐ Nota", value: stars, inline: true },
-          { name: "💬 Comentário", value: `> ${feedback}`, inline: false }
+          {
+            name: "Nota",
+            value: `${starsFromRating(rating)} \`(${rating}/5)\``,
+            inline: true,
+          },
+          {
+            name: "Comentário",
+            value: feedback.length > 0 ? `> ${feedback}` : "—",
+            inline: false,
+          }
         )
         .setTimestamp();
 
