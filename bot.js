@@ -37,6 +37,7 @@ const cooldowns = new Map();
 
 // --- Endpoint principal para pedidos ---
 app.options("/order", cors()); // 👈 responde preflight
+// --- Endpoint principal para pedidos ---
 app.post("/order", async (req, res) => {
   const { user, formData, price } = req.body;
 
@@ -48,6 +49,7 @@ app.post("/order", async (req, res) => {
   const now = Date.now();
   const lastTicket = cooldowns.get(userId);
 
+  // Cooldown de 5 minutos
   if (lastTicket && now - lastTicket < 5 * 60 * 1000) {
     return res
       .status(429)
@@ -56,9 +58,18 @@ app.post("/order", async (req, res) => {
 
   try {
     const guild = await client.guilds.fetch(GUILD_ID);
-    const member = await guild.members.fetch(userId);
 
-    // 1️⃣ Log do pedido (opcional)
+    let member;
+    try {
+      member = await guild.members.fetch(userId);
+    } catch (err) {
+      console.warn(`Usuário ${userId} não está no servidor.`);
+      return res.status(400).json({
+        error: "Você precisa entrar no servidor do Discord antes de abrir um ticket."
+      });
+    }
+
+    // 1️⃣ Logar pedido num canal fixo (opcional)
     if (ORDERS_CHANNEL_ID) {
       const ordersChannel = await guild.channels.fetch(ORDERS_CHANNEL_ID);
       await ordersChannel.send(
@@ -72,10 +83,10 @@ app.post("/order", async (req, res) => {
       );
     }
 
-    // 2️⃣ Criar canal do ticket
+    // 2️⃣ Criar canal de ticket
     const channel = await guild.channels.create({
       name: `ticket-${member.user.username}`,
-      type: 0,
+      type: 0, // 0 = text channel
       parent: CATEGORY_ID,
       permissionOverwrites: [
         {
@@ -104,6 +115,7 @@ app.post("/order", async (req, res) => {
         `Nossa staff vai entrar em contato em breve.`
     );
 
+    // Registrar cooldown
     cooldowns.set(userId, now);
 
     return res.json({ success: true, channelId: channel.id });
@@ -112,6 +124,7 @@ app.post("/order", async (req, res) => {
     return res.status(500).json({ error: "Erro ao criar ticket" });
   }
 });
+
 
 // --- Inicializar servidor HTTP ---
 const PORT = process.env.PORT || 3000;
