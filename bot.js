@@ -24,7 +24,9 @@ app.use(express.json());
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers, // precisa do "Server Members Intent" habilitado no portal dev
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages, // ← NECESSÁRIO para receber mensagens
+    GatewayIntentBits.MessageContent, // ← NECESSÁRIO para ler o conteúdo das mensagens
   ],
 });
 
@@ -86,9 +88,17 @@ app.post("/order", async (req, res) => {
         )
         .addFields(
           //{ name: "🔪 Melee", value: formData.meleeWeapon || "Nenhum", inline: true },
-          { name: "🔪 Melee", value: formData?.meleeWeapon || "Nenhum", inline: true },
+          {
+            name: "🔪 Melee",
+            value: formData?.meleeWeapon || "Nenhum",
+            inline: true,
+          },
           { name: "🏹 Bow", value: formData.bow || "Nenhum", inline: true },
-          { name: "💎 Amuleto", value: formData.amulet || "Nenhum", inline: true },
+          {
+            name: "💎 Amuleto",
+            value: formData.amulet || "Nenhum",
+            inline: true,
+          },
           {
             name: "📊 Stats",
             value:
@@ -101,9 +111,23 @@ app.post("/order", async (req, res) => {
               `Range: ${formData.stats.ranged}`,
             inline: false,
           },
-          { name: "📡 Parsec", value: formData.useParsec ? "Sim" : "Não", inline: true },
-          { name: "🙏 Cox Prayers", value: formData.coxPrayers ? "Sim" : "Não", inline: true },
-          { name: "🏹 Blowpipe", value: formData.hasBlowpipe ? `Sim (${formData.blowpipeDart})` : "Não", inline: true },
+          {
+            name: "📡 Parsec",
+            value: formData.useParsec ? "Sim" : "Não",
+            inline: true,
+          },
+          {
+            name: "🙏 Cox Prayers",
+            value: formData.coxPrayers ? "Sim" : "Não",
+            inline: true,
+          },
+          {
+            name: "🏹 Blowpipe",
+            value: formData.hasBlowpipe
+              ? `Sim (${formData.blowpipeDart})`
+              : "Não",
+            inline: true,
+          },
           { name: "💸 Preço", value: `${price}M`, inline: true }
         )
         .setTimestamp();
@@ -150,9 +174,17 @@ app.post("/order", async (req, res) => {
           : member.user.displayAvatarURL()
       )
       .addFields(
-        { name: "🔪 Melee", value: formData.meleeWeapon || "Nenhum", inline: true },
+        {
+          name: "🔪 Melee",
+          value: formData.meleeWeapon || "Nenhum",
+          inline: true,
+        },
         { name: "🏹 Bow", value: formData.bow || "Nenhum", inline: true },
-        { name: "💎 Amuleto", value: formData.amulet || "Nenhum", inline: true },
+        {
+          name: "💎 Amuleto",
+          value: formData.amulet || "Nenhum",
+          inline: true,
+        },
         {
           name: "📊 Stats",
           value:
@@ -165,9 +197,23 @@ app.post("/order", async (req, res) => {
             `Range: ${formData.stats.ranged}`,
           inline: false,
         },
-        { name: "📡 Parsec", value: formData.useParsec ? "Sim" : "Não", inline: true },
-        { name: "🙏 Cox Prayers", value: formData.coxPrayers ? "Sim" : "Não", inline: true },
-        { name: "🏹 Blowpipe", value: formData.hasBlowpipe ? `Sim (${formData.blowpipeDart})` : "Não", inline: true },
+        {
+          name: "📡 Parsec",
+          value: formData.useParsec ? "Sim" : "Não",
+          inline: true,
+        },
+        {
+          name: "🙏 Cox Prayers",
+          value: formData.coxPrayers ? "Sim" : "Não",
+          inline: true,
+        },
+        {
+          name: "🏹 Blowpipe",
+          value: formData.hasBlowpipe
+            ? `Sim (${formData.blowpipeDart})`
+            : "Não",
+          inline: true,
+        },
         { name: "💸 Preço", value: `${price}M`, inline: true }
       )
       .setTimestamp();
@@ -197,6 +243,9 @@ client.once("ready", () => {
 
 // --- Comando !close para fechar tickets ---
 client.on("messageCreate", async (message) => {
+  console.log(
+    `[${message.channel.name}] ${message.author.tag}: ${message.content}`
+  );
   if (message.author.bot) return;
   if (!message.content.startsWith("!close")) return;
 
@@ -209,9 +258,14 @@ client.on("messageCreate", async (message) => {
   const member = await channel.guild.members.fetch(message.author.id);
   const isStaff = member.roles.cache.has(STAFF_ROLE_ID);
 
-  if (!isStaff && !channel.permissionsFor(message.author.id)?.has("ManageChannels")) {
+  if (
+    !isStaff &&
+    !channel.permissionsFor(message.author.id)?.has("ManageChannels")
+  ) {
     if (!channel.name.includes(message.author.username.toLowerCase())) {
-      return message.reply("❌ Apenas staff ou o dono do ticket podem fechar este canal.");
+      return message.reply(
+        "❌ Apenas staff ou o dono do ticket podem fechar este canal."
+      );
     }
   }
 
