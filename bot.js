@@ -8,33 +8,35 @@ const express = require("express");
 const cors = require("cors");
 
 const app = express();
-app.use(express.json());
 
-// CORS liberado
+// ⚠️ ordem importa → CORS antes das rotas
 app.use(cors({
   origin: "*", 
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type"],
 }));
 
+app.use(express.json());
+
 // --- Discord Bot Setup ---
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers, // precisa do "Server Members Intent" habilitado
+    GatewayIntentBits.GuildMembers, // precisa do "Server Members Intent" habilitado no portal dev
   ],
 });
 
 const TOKEN = process.env.DISCORD_TOKEN; // Coloque no Render
-const GUILD_ID = process.env.GUILD_ID; // ID do seu servidor
-const CATEGORY_ID = process.env.CATEGORY_ID; // Categoria onde tickets vão ser criados
-const STAFF_ROLE_ID = process.env.STAFF_ROLE_ID; // Role da Staff que terá acesso
-const ORDERS_CHANNEL_ID = process.env.ORDERS_CHANNEL_ID; // Canal onde lista pedidos (opcional)
+const GUILD_ID = process.env.GUILD_ID; 
+const CATEGORY_ID = process.env.CATEGORY_ID;
+const STAFF_ROLE_ID = process.env.STAFF_ROLE_ID;
+const ORDERS_CHANNEL_ID = process.env.ORDERS_CHANNEL_ID;
 
 // Cooldown em memória
-const cooldowns = new Map(); // userId -> timestamp
+const cooldowns = new Map();
 
 // --- Endpoint principal para pedidos ---
+app.options("/order", cors()); // 👈 responde preflight
 app.post("/order", async (req, res) => {
   const { user, formData, price } = req.body;
 
@@ -46,7 +48,6 @@ app.post("/order", async (req, res) => {
   const now = Date.now();
   const lastTicket = cooldowns.get(userId);
 
-  // Cooldown de 5 minutos
   if (lastTicket && now - lastTicket < 5 * 60 * 1000) {
     return res
       .status(429)
@@ -57,7 +58,7 @@ app.post("/order", async (req, res) => {
     const guild = await client.guilds.fetch(GUILD_ID);
     const member = await guild.members.fetch(userId);
 
-    // 1️⃣ Logar pedido num canal fixo (opcional)
+    // 1️⃣ Log do pedido (opcional)
     if (ORDERS_CHANNEL_ID) {
       const ordersChannel = await guild.channels.fetch(ORDERS_CHANNEL_ID);
       await ordersChannel.send(
@@ -71,10 +72,10 @@ app.post("/order", async (req, res) => {
       );
     }
 
-    // 2️⃣ Criar canal de ticket
+    // 2️⃣ Criar canal do ticket
     const channel = await guild.channels.create({
       name: `ticket-${member.user.username}`,
-      type: 0, // 0 = text channel
+      type: 0,
       parent: CATEGORY_ID,
       permissionOverwrites: [
         {
@@ -103,7 +104,6 @@ app.post("/order", async (req, res) => {
         `Nossa staff vai entrar em contato em breve.`
     );
 
-    // Registrar cooldown
     cooldowns.set(userId, now);
 
     return res.json({ success: true, channelId: channel.id });
