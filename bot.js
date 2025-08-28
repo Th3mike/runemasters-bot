@@ -115,7 +115,7 @@ client.on("messageCreate", async (message) => {
 // Interações: Botões e Modais
 client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isButton()) {
-    // 👉 qualquer usuário pode usar os botões
+    // 👉 Removemos a checagem da role aqui, qualquer usuário pode clicar
     if (
       interaction.customId === "feedback_with_user" ||
       interaction.customId === "feedback_anonymous"
