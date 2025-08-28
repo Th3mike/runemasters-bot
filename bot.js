@@ -1,70 +1,80 @@
 import express from "express";
-import { Client, GatewayIntentBits, PermissionFlagsBits } from "discord.js";
+import bodyParser from "body-parser";
+import { Client, GatewayIntentBits, PermissionsBitField } from "discord.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
-app.use(express.json());
+app.use(bodyParser.json());
 
-// Config
-const TOKEN = process.env.BOT_TOKEN;
-const GUILD_ID = process.env.GUILD_ID;
-const CATEGORY_ID = process.env.CATEGORY_ID;
-const STAFF_ROLE_ID = process.env.STAFF_ROLE_ID;
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
+});
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
-client.login(TOKEN);
+client.once("ready", () => {
+  console.log(`Bot logado como ${client.user.tag}`);
+});
 
-let cooldowns = new Map();
+// ✅ Rota de status
+app.get("/", (req, res) => {
+  res.json({ status: "ok", bot: client.user?.tag || "iniciando..." });
+});
 
+// ✅ Rota de pedidos
 app.post("/order", async (req, res) => {
-  const { user, formData, price } = req.body;
-
-  if (!user || !user.discordId) {
-    return res.status(400).send("Usuário inválido");
-  }
-
-  const now = Date.now();
-  if (cooldowns.has(user.discordId) && now - cooldowns.get(user.discordId) < 5 * 60 * 1000) {
-    return res.status(429).send("Aguarde 5 minutos antes de abrir outro ticket.");
-  }
-  cooldowns.set(user.discordId, now);
-
   try {
-    const guild = await client.guilds.fetch(GUILD_ID);
-    const member = await guild.members.fetch(user.discordId);
+    const { userId, username, formData, price } = req.body;
 
+    const guild = await client.guilds.fetch(process.env.GUILD_ID);
+    const category = guild.channels.cache.get(process.env.CATEGORY_ID);
+    const staffRole = guild.roles.cache.get(process.env.STAFF_ROLE_ID);
+
+    if (!guild || !category || !staffRole) {
+      return res.status(400).json({ error: "Configuração inválida" });
+    }
+
+    // cria o canal com permissões
     const channel = await guild.channels.create({
-      name: `ticket-${member.user.username}`,
-      parent: CATEGORY_ID,
+      name: `ticket-${username}`,
+      type: 0, // GUILD_TEXT
+      parent: category.id,
       permissionOverwrites: [
         {
-          id: guild.roles.everyone.id,
-          deny: [PermissionFlagsBits.ViewChannel],
+          id: guild.id,
+          deny: [PermissionsBitField.Flags.ViewChannel],
         },
         {
-          id: member.id,
-          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
+          id: userId,
+          allow: [PermissionsBitField.Flags.ViewChannel],
         },
         {
-          id: STAFF_ROLE_ID,
-          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
+          id: staffRole.id,
+          allow: [PermissionsBitField.Flags.ViewChannel],
         },
       ],
     });
 
     await channel.send(
-      `📦 **Novo pedido de ${member}**\n` +
-        `🔪 Weapon: ${formData.weapon || formData.meleeWeapon}\n` +
-        `🏹 Bow: ${formData.bow || "Nenhuma"}\n` +
-        `📊 Stats: ${JSON.stringify(formData.stats)}\n` +
-        `💸 Preço: ${price}M\n` +
-        `📡 Parsec: ${formData.isParsec || formData.useParsec ? "Sim" : "Não"}`
+      `🎟️ Novo pedido de **${username}**!\n💰 Preço: ${price}M\n📋 Dados: \`\`\`${JSON.stringify(
+        formData,
+        null,
+        2
+      )}\`\`\``
     );
 
-    res.send({ success: true, channelId: channel.id });
+    res.json({ success: true, channel: channel.id });
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Erro ao criar ticket.");
+    console.error("Erro ao criar ticket:", err);
+    res.status(500).json({ error: "Erro interno ao criar ticket" });
   }
 });
 
-app.listen(3000, () => console.log("Bot rodando 🚀"));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+
+client.login(process.env.BOT_TOKEN);
