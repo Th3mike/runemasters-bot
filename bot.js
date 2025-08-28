@@ -1,6 +1,6 @@
 // index.js
-import { Client, GatewayIntentBits, PermissionsBitField } from "discord.js";
-import express from "express";
+const { Client, GatewayIntentBits, PermissionsBitField } = require("discord.js");
+const express = require("express");
 
 const app = express();
 app.use(express.json());
