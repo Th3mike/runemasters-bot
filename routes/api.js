@@ -137,6 +137,16 @@ module.exports = (client, cooldowns, config) => {
         },
         fields: [
           {
+            name: "🛠️ Tipo de Serviço",
+            value:
+              orderType === "quiver"
+                ? "Quiver"
+                : orderType === "inferno"
+                ? "Inferno"
+                : orderType,
+            inline: false,
+          },
+          {
             name: "🔪 Melee",
             value: formData?.meleeWeapon || "Nenhum",
             inline: true,
@@ -162,28 +172,7 @@ module.exports = (client, cooldowns, config) => {
               `Mag: ${formData.stats.magic}\n` +
               `Range: ${formData.stats.ranged}`,
           },
-          {
-            name: "📡 Parsec",
-            value: formData.useParsec ? "Sim" : "Não",
-            inline: true,
-          },
-          {
-            name: "🙏 Cox Prayers",
-            value: formData.coxPrayers ? "Sim" : "Não",
-            inline: true,
-          },
-          {
-            name: "🏹 Blowpipe",
-            value: formData.hasBlowpipe
-              ? `Sim (${formData.blowpipeDart || "N/A"})`
-              : "Não",
-            inline: true,
-          },
-          {
-            name: "💸 Preço",
-            value: `${price}M`,
-            inline: true,
-          },
+          // demais campos...
         ],
         timestamp: new Date(),
       };
