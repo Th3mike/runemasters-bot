@@ -13,10 +13,12 @@ module.exports = (client, cooldowns, config) => {
 
   // POST /order
   router.post("/order", async (req, res) => {
-    const { user, formData, price } = req.body;
+    const { user, formData, price, orderType } = req.body;
 
-    if (!user || !user.discordId) {
-      return res.status(400).json({ error: "user.discordId é obrigatório" });
+    if (!user || !user.discordId || !orderType) {
+      return res
+        .status(400)
+        .json({ error: "user.discordId e orderType são obrigatórios" });
     }
 
     const userId = user.discordId;
@@ -41,7 +43,7 @@ module.exports = (client, cooldowns, config) => {
 
         embed = {
           color: 0x9b59b6,
-          title: "📦 Novo Pedido",
+          title: `📦 Novo Pedido - ${orderType.toUpperCase()}`,
           description: `Pedido de **${user.username}**`,
           thumbnail: {
             url:
