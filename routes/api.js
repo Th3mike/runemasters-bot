@@ -11,6 +11,15 @@ module.exports = (client, cooldowns, config) => {
     ROLE_TO_ASSIGN_ID, // 👈 nova role para atribuição automática
   } = config;
 
+  // Função para formatar nomes (remover _ e capitalizar)
+  function formatWeaponName(name) {
+    if (!name) return "Nenhum";
+    return name
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
   // POST /order
   router.post("/order", async (req, res) => {
     const { user, formData, price, orderType } = req.body;
@@ -53,17 +62,17 @@ module.exports = (client, cooldowns, config) => {
           fields: [
             {
               name: "🔪 Melee",
-              value: formData?.meleeWeapon || "Nenhum",
+              value: formatWeaponName(formData?.meleeWeapon),
               inline: true,
             },
             {
               name: "🏹 Bow",
-              value: formData?.bow || "Nenhum",
+              value: formatWeaponName(formData?.bow),
               inline: true,
             },
             {
               name: "💎 Amuleto",
-              value: formData?.amulet || "Nenhum",
+              value: formatWeaponName(formData?.amulet),
               inline: true,
             },
             {
@@ -148,17 +157,17 @@ module.exports = (client, cooldowns, config) => {
           },
           {
             name: "🔪 Melee",
-            value: formData?.meleeWeapon || "Nenhum",
+            value: formatWeaponName(formData?.meleeWeapon),
             inline: true,
           },
           {
             name: "🏹 Bow",
-            value: formData?.bow || "Nenhum",
+            value: formatWeaponName(formData?.bow),
             inline: true,
           },
           {
             name: "💎 Amuleto",
-            value: formData?.amulet || "Nenhum",
+            value: formatWeaponName(formData?.amulet),
             inline: true,
           },
           {
@@ -172,7 +181,28 @@ module.exports = (client, cooldowns, config) => {
               `Mag: ${formData.stats.magic}\n` +
               `Range: ${formData.stats.ranged}`,
           },
-          // demais campos...
+          {
+            name: "📡 Parsec",
+            value: formData.useParsec ? "Sim" : "Não",
+            inline: true,
+          },
+          {
+            name: "🙏 Cox Prayers",
+            value: formData.coxPrayers ? "Sim" : "Não",
+            inline: true,
+          },
+          {
+            name: "🏹 Blowpipe",
+            value: formData.hasBlowpipe
+              ? `Sim (${formData.blowpipeDart || "N/A"})`
+              : "Não",
+            inline: true,
+          },
+          {
+            name: "💸 Preço",
+            value: `${price}M`,
+            inline: true,
+          },
         ],
         timestamp: new Date(),
       };
