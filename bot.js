@@ -152,7 +152,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       const embed = new EmbedBuilder()
         .setColor(isWithUser ? 0x2ecc71 : 0x95a5a6)
-        .setTitle("📬 Novo Feedback Recebido")
+        .setTitle("⭐⭐⭐⭐⭐")
         .setDescription(`> ${feedback}`)
         .setTimestamp();
 
@@ -167,7 +167,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         embed
           .setAuthor({
             name: "Anônimo",
-            iconURL: "https://i.imgur.com/8b6V4fL.png",
+            iconURL: "https://i.imgur.com/9UQhVJ0.png",
           })
           .setFooter({ text: "📎 Enviado anonimamente" });
       }
