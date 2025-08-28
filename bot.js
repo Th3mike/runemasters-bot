@@ -137,4 +137,32 @@ client.once("ready", () => {
   console.log(`Bot logado como ${client.user.tag}`);
 });
 
+// --- Comando !close para fechar tickets ---
+client.on("messageCreate", async (message) => {
+  if (message.author.bot) return; // ignora outros bots
+  if (!message.content.startsWith("!close")) return;
+
+  const channel = message.channel;
+
+  // Confere se o canal é um ticket
+  if (!channel.name.startsWith("ticket-")) {
+    return message.reply("❌ Este canal não é um ticket.");
+  }
+
+  // Verifica se quem mandou é staff OU o dono do ticket
+  const member = await channel.guild.members.fetch(message.author.id);
+  const isStaff = member.roles.cache.has(STAFF_ROLE_ID);
+
+  if (!isStaff && !channel.permissionsFor(message.author.id)?.has("ManageChannels")) {
+    // Se não for staff nem tiver perm de gerenciar, só o dono pode fechar
+    if (!channel.name.includes(message.author.username.toLowerCase())) {
+      return message.reply("❌ Apenas staff ou o dono do ticket podem fechar este canal.");
+    }
+  }
+
+  await message.reply("🔒 Fechando o ticket em 5 segundos...");
+  setTimeout(() => channel.delete().catch(() => {}), 5000);
+});
+
+
 client.login(TOKEN);
