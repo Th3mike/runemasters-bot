@@ -220,12 +220,21 @@ module.exports = (client, cooldowns, config) => {
   router.post("/check-membership", async (req, res) => {
     const { discordId } = req.body;
 
+    if (!discordId) {
+      console.log("check-membership: discordId não fornecido");
+      return res.status(400).json({ error: "discordId é obrigatório." });
+    }
+
     try {
       const guild = await client.guilds.fetch(config.GUILD_ID);
       const member = await guild.members.fetch(discordId);
+      console.log(`check-membership: Usuário ${discordId} está no servidor.`);
       return res.json({ inGuild: !!member });
     } catch (error) {
-      console.log("Usuário não está no servidor:", discordId);
+      console.log(
+        `check-membership: Usuário ${discordId} não está no servidor ou erro:`,
+        error.message
+      );
       return res.json({ inGuild: false });
     }
   });
