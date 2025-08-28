@@ -85,7 +85,8 @@ app.post("/order", async (req, res) => {
             : member.user.displayAvatarURL()
         )
         .addFields(
-          { name: "🔪 Melee", value: formData.meleeWeapon || "Nenhum", inline: true },
+          //{ name: "🔪 Melee", value: formData.meleeWeapon || "Nenhum", inline: true },
+          { name: "🔪 Melee", value: formData?.meleeWeapon || "Nenhum", inline: true },
           { name: "🏹 Bow", value: formData.bow || "Nenhum", inline: true },
           { name: "💎 Amuleto", value: formData.amulet || "Nenhum", inline: true },
           {
