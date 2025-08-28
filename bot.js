@@ -1,5 +1,9 @@
 // index.js
-const { Client, GatewayIntentBits, PermissionsBitField } = require("discord.js");
+const {
+  Client,
+  GatewayIntentBits,
+  PermissionsBitField,
+} = require("discord.js");
 const express = require("express");
 
 const app = express();
@@ -7,11 +11,14 @@ app.use(express.json());
 
 // --- Discord Bot Setup ---
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers, // precisa do "Server Members Intent" habilitado no portal
+  ],
 });
 
 const TOKEN = process.env.DISCORD_TOKEN; // Coloque no Render Dashboard
-const GUILD_ID = process.env.GUILD_ID;   // ID do seu servidor
+const GUILD_ID = process.env.GUILD_ID; // ID do seu servidor
 const CATEGORY_ID = process.env.CATEGORY_ID; // Categoria onde os tickets vão ser criados
 const STAFF_ROLE_ID = process.env.STAFF_ROLE_ID; // Role da Staff que terá acesso
 
@@ -31,7 +38,9 @@ app.post("/create-ticket", async (req, res) => {
 
   // Verificar cooldown de 5 minutos
   if (lastTicket && now - lastTicket < 5 * 60 * 1000) {
-    return res.status(429).json({ error: "Você só pode abrir outro ticket em 5 minutos." });
+    return res
+      .status(429)
+      .json({ error: "Você só pode abrir outro ticket em 5 minutos." });
   }
 
   try {
@@ -50,17 +59,25 @@ app.post("/create-ticket", async (req, res) => {
         },
         {
           id: userId, // Usuário com acesso
-          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+          allow: [
+            PermissionsBitField.Flags.ViewChannel,
+            PermissionsBitField.Flags.SendMessages,
+          ],
         },
         {
           id: STAFF_ROLE_ID, // Staff com acesso
-          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+          allow: [
+            PermissionsBitField.Flags.ViewChannel,
+            PermissionsBitField.Flags.SendMessages,
+          ],
         },
       ],
     });
 
     // Mensagem inicial
-    await channel.send(`🎫 Olá <@${userId}>, seu ticket foi aberto! Aguarde a staff.`);
+    await channel.send(
+      `🎫 Olá <@${userId}>, seu ticket foi aberto! Aguarde a staff.`
+    );
 
     // Registrar cooldown
     cooldowns.set(userId, now);
