@@ -1,103 +1,70 @@
-// index.js
-const {
-  Client,
-  GatewayIntentBits,
-  PermissionsBitField,
-} = require("discord.js");
-const express = require("express");
+import express from "express";
+import { Client, GatewayIntentBits, PermissionFlagsBits } from "discord.js";
 
 const app = express();
 app.use(express.json());
 
-// --- Discord Bot Setup ---
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers, // precisa do "Server Members Intent" habilitado no portal
-  ],
-});
+// Config
+const TOKEN = process.env.BOT_TOKEN;
+const GUILD_ID = process.env.GUILD_ID;
+const CATEGORY_ID = process.env.CATEGORY_ID;
+const STAFF_ROLE_ID = process.env.STAFF_ROLE_ID;
 
-const TOKEN = process.env.DISCORD_TOKEN; // Coloque no Render Dashboard
-const GUILD_ID = process.env.GUILD_ID; // ID do seu servidor
-const CATEGORY_ID = process.env.CATEGORY_ID; // Categoria onde os tickets vão ser criados
-const STAFF_ROLE_ID = process.env.STAFF_ROLE_ID; // Role da Staff que terá acesso
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+client.login(TOKEN);
 
-// Cooldown em memória
-const cooldowns = new Map(); // userId -> timestamp
+let cooldowns = new Map();
 
-// --- API Endpoint para receber pedidos do frontend ---
-app.post("/create-ticket", async (req, res) => {
-  const { userId } = req.body;
+app.post("/order", async (req, res) => {
+  const { user, formData, price } = req.body;
 
-  if (!userId) {
-    return res.status(400).json({ error: "userId é obrigatório" });
+  if (!user || !user.discordId) {
+    return res.status(400).send("Usuário inválido");
   }
 
   const now = Date.now();
-  const lastTicket = cooldowns.get(userId);
-
-  // Verificar cooldown de 5 minutos
-  if (lastTicket && now - lastTicket < 5 * 60 * 1000) {
-    return res
-      .status(429)
-      .json({ error: "Você só pode abrir outro ticket em 5 minutos." });
+  if (cooldowns.has(user.discordId) && now - cooldowns.get(user.discordId) < 5 * 60 * 1000) {
+    return res.status(429).send("Aguarde 5 minutos antes de abrir outro ticket.");
   }
+  cooldowns.set(user.discordId, now);
 
   try {
     const guild = await client.guilds.fetch(GUILD_ID);
-    const member = await guild.members.fetch(userId);
+    const member = await guild.members.fetch(user.discordId);
 
-    // Criar canal
     const channel = await guild.channels.create({
       name: `ticket-${member.user.username}`,
-      type: 0, // 0 = text channel
       parent: CATEGORY_ID,
       permissionOverwrites: [
         {
-          id: guild.roles.everyone.id, // @everyone sem acesso
-          deny: [PermissionsBitField.Flags.ViewChannel],
+          id: guild.roles.everyone.id,
+          deny: [PermissionFlagsBits.ViewChannel],
         },
         {
-          id: userId, // Usuário com acesso
-          allow: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.SendMessages,
-          ],
+          id: member.id,
+          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
         },
         {
-          id: STAFF_ROLE_ID, // Staff com acesso
-          allow: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.SendMessages,
-          ],
+          id: STAFF_ROLE_ID,
+          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
         },
       ],
     });
 
-    // Mensagem inicial
     await channel.send(
-      `🎫 Olá <@${userId}>, seu ticket foi aberto! Aguarde a staff.`
+      `📦 **Novo pedido de ${member}**\n` +
+        `🔪 Weapon: ${formData.weapon || formData.meleeWeapon}\n` +
+        `🏹 Bow: ${formData.bow || "Nenhuma"}\n` +
+        `📊 Stats: ${JSON.stringify(formData.stats)}\n` +
+        `💸 Preço: ${price}M\n` +
+        `📡 Parsec: ${formData.isParsec || formData.useParsec ? "Sim" : "Não"}`
     );
 
-    // Registrar cooldown
-    cooldowns.set(userId, now);
-
-    return res.json({ success: true, channelId: channel.id });
+    res.send({ success: true, channelId: channel.id });
   } catch (err) {
-    console.error("Erro ao criar ticket:", err);
-    return res.status(500).json({ error: "Erro ao criar ticket" });
+    console.error(err);
+    res.status(500).send("Erro ao criar ticket.");
   }
 });
 
-// --- Inicializar servidor HTTP (necessário pro Render) ---
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`API rodando na porta ${PORT}`);
-});
-
-// --- Login do bot ---
-client.once("ready", () => {
-  console.log(`Bot logado como ${client.user.tag}`);
-});
-
-client.login(TOKEN);
+app.listen(3000, () => console.log("Bot rodando 🚀"));
