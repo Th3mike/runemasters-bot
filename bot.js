@@ -22,14 +22,13 @@ const allowedOrigins = [
   "https://runemasters-bot.onrender.com",
   "https://runemasters-1.onrender.com",
   "https://runemasters.shop",
-  "https://www.runemasters.shop/",
-  "www.runemasters.shop/"
+  "https://www.runemasters.shop",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // permite requests sem origin (ex: curl, postman)
+      console.log("Origem recebida:", origin);
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.indexOf(origin) === -1) {
