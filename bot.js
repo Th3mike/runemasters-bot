@@ -173,12 +173,10 @@ client.on("messageCreate", async (message) => {
     const embed = new EmbedBuilder()
       .setColor(0x7289da)
       .setTitle("07 GP")
-      .addFields(
-        { name: "🌍 Mundo", value: mundo, inline: true },
-        { name: "🧑‍💻 RSN", value: rsn, inline: true },
-        { name: "⚔️ Cbt", value: cbt, inline: true },
-        { name: "📍 Local", value: "Varrock west bank", inline: false }
-      )
+      .addFields({
+        name: "Localização do jogador",
+        value: `🌍 Mundo: ${mundo}\n🧑‍💻 RSN: ${rsn}\n⚔️ Cbt: ${cbt}\n📍 Local: Varrock west bank`,
+      })
       .setTimestamp();
 
     // Primeiro, envia o embed
