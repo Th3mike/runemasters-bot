@@ -174,7 +174,7 @@ client.on("messageCreate", async (message) => {
       .setColor(0x7289da)
       .setTitle("07 GP")
       .addFields({
-        name: "Localização do jogador",
+        name: "Aonde ir",
         value: `🌍 Mundo: ${mundo}\n\n🧑‍💻 RSN: ${rsn}\n\n⚔️ Cbt: ${cbt}\n\n📍 Local: Varrock west bank`,
       })
       .setTimestamp();
