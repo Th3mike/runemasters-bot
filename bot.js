@@ -206,8 +206,8 @@ client.on("messageCreate", async (message) => {
     }
 
     // 🔑 Dados do seu Pix
-    const chavePix = "16996369206";
-    const nome = "MARCIO LACERDA";
+    const chavePix = "9ff3b1bd-8ee5-4108-9b9c-069f64f67c45";
+    const nome = "RuneMasters";
     const cidade = "SAO PAULO";
 
     // Gera o payload Pix
@@ -220,7 +220,7 @@ client.on("messageCreate", async (message) => {
 
     // Responde com QR Code + código Pix + valor
     await message.reply({
-      content: `💳 **Pagamento Pix**\n\n🔑 Chave Pix: \`${chavePix}\`\n💰 Valor: R$ ${valor.toFixed(
+      content: `💳 **Pagamento Pix**\n\n🔑 Chave Pix: \`${chavePix}\`\n\n💰 Valor: R$ ${valor.toFixed(
         2
       )}\n\n📲 Escaneie o QR Code abaixo ou use o código Pix: \n\`\`\`${payload}\`\`\``,
       files: [
