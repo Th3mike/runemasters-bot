@@ -239,10 +239,19 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       await feedbackChannel.send({ embeds: [embed] });
 
+      // ✅ Responde ao usuário
       await interaction.reply({
         content: "✅ Obrigado pelo seu feedback!",
         ephemeral: true,
       });
+
+      // ✅ Remove botões da mensagem original
+      if (interaction.message) {
+        await interaction.message.edit({
+          content: "📬 Feedback já enviado ✅",
+          components: [], // remove botões
+        });
+      }
     } catch (error) {
       console.error("Erro ao enviar feedback:", error);
       await interaction.reply({
