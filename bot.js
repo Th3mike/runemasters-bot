@@ -209,6 +209,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         .setTitle("Review")
         .addFields(
           {
+            name: "Nota",
             value: `${starsFromRating(rating)} \`(${rating}/5)\``,
             inline: true,
           },
