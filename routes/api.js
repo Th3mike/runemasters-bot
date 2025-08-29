@@ -15,9 +15,9 @@ module.exports = (client, cooldowns, config) => {
   function formatWeaponName(name) {
     if (!name) return "Nenhum";
     return name
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   }
 
   // POST /order
@@ -254,9 +254,42 @@ module.exports = (client, cooldowns, config) => {
         `check-membership: Usuário ${discordId} não está no servidor ou erro:`,
         error.message
       );
+      // Garantindo que sempre retorne JSON válido
       return res.json({ inGuild: false });
     }
   });
+
+  // GET /feedbacks
+router.get("/feedbacks", async (req, res) => {
+  try {
+    const feedbackChannel = await client.channels.fetch(config.FEEDBACK_CHANNEL_ID);
+    const messages = await feedbackChannel.messages.fetch({ limit: 20 }); // limite opcional
+
+    const feedbacks = [];
+
+    messages.forEach((msg) => {
+      const embed = msg.embeds[0];
+      if (!embed) return;
+
+      const ratingField = embed.fields.find(f => f.name === "Nota");
+      const commentField = embed.fields.find(f => f.name === "Comentário");
+
+      feedbacks.push({
+        username: embed.author?.name || "Anônimo",
+        avatar: embed.author?.icon_url || "https://i.imgur.com/9UQhVJ0.png",
+        rating: ratingField?.value || "",
+        comment: commentField?.value || "",
+        date: embed.timestamp || msg.createdTimestamp
+      });
+    });
+
+    return res.json({ feedbacks });
+  } catch (err) {
+    console.error("Erro ao buscar feedbacks:", err);
+    return res.status(500).json({ error: "Erro ao buscar feedbacks." });
+  }
+});
+
 
   return router;
 };
