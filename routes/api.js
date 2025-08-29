@@ -162,9 +162,6 @@ module.exports = (client, cooldowns, config) => {
         const ordersChannel = await guild.channels.fetch(ORDERS_CHANNEL_ID);
         embed = generateEmbed(user, member, formData, price, orderType);
         await ordersChannel.send({ embeds: [embed] });
-
-        // marcaar a role @staff
-        await ordersChannel.send(`<@&1410524237009260545>`);
       }
 
       const ticketChannel = await guild.channels.create({
@@ -195,7 +192,10 @@ module.exports = (client, cooldowns, config) => {
         orderType,
         true
       );
-      await ticketChannel.send({ embeds: [ticketEmbed] });
+      await ticketChannel.send({
+        content: `<@&1410524237009260545> <@1407040987997409411>`,
+        embeds: [ticketEmbed],
+      });
 
       cooldowns.set(userId, now);
       return res.json({ success: true, channelId: ticketChannel.id });
