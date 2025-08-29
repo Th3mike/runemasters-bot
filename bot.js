@@ -145,7 +145,6 @@ client.on("messageCreate", async (message) => {
   }
 
   // !loc
-  // !loc <mundo> <rsn> <cbt>
   if (message.content.startsWith("!loc")) {
     const args = message.content.trim().split(/\s+/);
     if (args.length !== 4) {
@@ -156,7 +155,6 @@ client.on("messageCreate", async (message) => {
 
     const [cmd, mundo, rsn, cbt] = args;
 
-    // Busca o membro
     const member =
       message.guild.members.cache.get(message.author.id) ||
       (await message.guild.members.fetch(message.author.id).catch(() => null));
@@ -164,12 +162,10 @@ client.on("messageCreate", async (message) => {
       return message.reply("❌ Erro ao verificar permissões.");
     }
 
-    // Verifica permissão
     if (!member.roles.cache.has(config.CLOSE_ROLE_ID)) {
       return message.reply("❌ Você não tem permissão para usar este comando.");
     }
 
-    // Validação simples dos argumentos
     if (isNaN(Number(mundo)) || isNaN(Number(cbt))) {
       return message.reply("❌ Mundo e Cbt devem ser números válidos.");
     }
@@ -185,8 +181,11 @@ client.on("messageCreate", async (message) => {
       )
       .setTimestamp();
 
-    await message.reply({
-      embeds: [embed],
+    // Primeiro, envia o embed
+    await message.reply({ embeds: [embed] });
+
+    // Depois, envia a imagem (sem embed)
+    await message.channel.send({
       files: ["https://www.runenation.org/images/varrockwestbank.png"],
     });
   }
