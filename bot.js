@@ -145,23 +145,43 @@ client.on("messageCreate", async (message) => {
   }
 
   // !loc
-  // !loc
+  // !loc <mundo> <rsn> <cbt>
   if (message.content.startsWith("!loc")) {
-    const member = await message.guild.members.fetch(message.author.id);
+    const args = message.content.trim().split(/\s+/); // divide por espaços
+    if (args.length !== 4) {
+      return message.reply(
+        "❌ Uso correto: `!loc <mundo> <rsn> <cbt>`\nExemplo: `!loc 554 Wenty 76`"
+      );
+    }
 
-    // verifica se o usuário tem a role CLOSE_ROLE_ID
+    const [cmd, mundo, rsn, cbt] = args;
+
+    // Busca o membro
+    const member =
+      message.guild.members.cache.get(message.author.id) ||
+      (await message.guild.members.fetch(message.author.id).catch(() => null));
+    if (!member) {
+      return message.reply("❌ Erro ao verificar permissões.");
+    }
+
+    // Verifica permissão
     if (!member.roles.cache.has(config.CLOSE_ROLE_ID)) {
       return message.reply("❌ Você não tem permissão para usar este comando.");
+    }
+
+    // Validação simples dos argumentos
+    if (isNaN(Number(mundo)) || isNaN(Number(cbt))) {
+      return message.reply("❌ Mundo e Cbt devem ser números válidos.");
     }
 
     const embed = new EmbedBuilder()
       .setColor(0x7289da)
       .setTitle("Localização do jogador")
       .addFields(
-        { name: "🌍 Mundo", value: "554", inline: true },
-        { name: "🧑‍💻 RSN", value: "Wenty", inline: true },
-        { name: "⚔️ Cbt", value: "76", inline: true },
-        { name: "📍 Local", value: "Varrock west bank", inline: false }
+        { name: "🌍 Mundo", value: mundo, inline: true },
+        { name: "🧑‍💻 RSN", value: rsn, inline: true },
+        { name: "⚔️ Cbt", value: cbt, inline: true },
+        { name: "📍 Local", value: "Varrock west bank", inline: false } // você pode tornar isso também customizável, se quiser
       )
       .setImage("https://www.runenation.org/images/varrockwestbank.png")
       .setTimestamp();
