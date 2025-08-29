@@ -145,9 +145,17 @@ client.on("messageCreate", async (message) => {
   }
 
   // !loc
+  // !loc
   if (message.content.startsWith("!loc")) {
+    const member = await message.guild.members.fetch(message.author.id);
+
+    // verifica se o usuário tem a role CLOSE_ROLE_ID
+    if (!member.roles.cache.has(config.CLOSE_ROLE_ID)) {
+      return message.reply("❌ Você não tem permissão para usar este comando.");
+    }
+
     const embed = new EmbedBuilder()
-      .setColor(0x7289da) // cor do embed
+      .setColor(0x7289da)
       .setTitle("Localização do jogador")
       .addFields(
         { name: "🌍 Mundo", value: "554", inline: true },
@@ -158,7 +166,7 @@ client.on("messageCreate", async (message) => {
       .setImage("https://www.runenation.org/images/varrockwestbank.png")
       .setTimestamp();
 
-    message.reply({ embeds: [embed] });
+    await message.reply({ embeds: [embed] });
   }
 
   // !pix <valor>
