@@ -175,7 +175,7 @@ client.on("messageCreate", async (message) => {
       .setTitle("07 GP")
       .addFields({
         name: "Localização do jogador",
-        value: `🌍 Mundo: ${mundo}\n🧑‍💻 RSN: ${rsn}\n⚔️ Cbt: ${cbt}\n📍 Local: Varrock west bank`,
+        value: `🌍 Mundo: ${mundo}\n\n🧑‍💻 RSN: ${rsn}\n\n⚔️ Cbt: ${cbt}\n\n📍 Local: Varrock west bank`,
       })
       .setTimestamp();
 
