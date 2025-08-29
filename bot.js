@@ -53,7 +53,7 @@ const config = {
   STAFF_ROLE_ID: process.env.STAFF_ROLE_ID,
   ORDERS_CHANNEL_ID: process.env.ORDERS_CHANNEL_ID,
   ROLE_TO_ASSIGN_ID: "1410666933669462176",
-  CLOSE_ROLE_ID: "1410524237009260545", // também usada como permissão para feedback e pix
+  CLOSE_ROLE_ID: "1410524237009260545",
   FEEDBACK_CHANNEL_ID: "1410747614143451196",
 };
 
@@ -147,6 +147,7 @@ client.on("messageCreate", async (message) => {
   // !pix <valor>
   // !pix <valor>
   if (message.content.startsWith("!pix")) {
+    // só quem tem a role CLOSE_ROLE_ID pode usar
     if (!member.roles.cache.has(config.CLOSE_ROLE_ID)) {
       return message.reply("❌ Você não tem permissão para usar este comando.");
     }
@@ -166,15 +167,19 @@ client.on("messageCreate", async (message) => {
     const nome = "MARCIO LACERDA";
     const cidade = "SAO PAULO";
 
+    // Gera o payload Pix
     const payload = gerarPayloadPix(chavePix, valor, nome, cidade);
+
+    // Gera QR Code
     const qrCodeDataUrl = await QRCode.toDataURL(payload, {
       errorCorrectionLevel: "M",
     });
 
+    // Responde com QR Code + código Pix + valor
     await message.reply({
       content: `💳 **Pagamento Pix**\n\n🔑 Chave Pix: \`${chavePix}\`\n💰 Valor: R$ ${valor.toFixed(
         2
-      )}\n\n📲 Escaneie o QR Code abaixo:`,
+      )}\n\n📲 Escaneie o QR Code abaixo ou use o código Pix: \n\`\`\`${payload}\`\`\``,
       files: [
         {
           attachment: Buffer.from(qrCodeDataUrl.split(",")[1], "base64"),
