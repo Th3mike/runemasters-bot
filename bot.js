@@ -144,7 +144,23 @@ client.on("messageCreate", async (message) => {
     });
   }
 
-  // !pix <valor>
+  // !loc
+  if (message.content.startsWith("!loc")) {
+    const embed = new EmbedBuilder()
+      .setColor(0x7289da) // cor do embed
+      .setTitle("Localização do jogador")
+      .addFields(
+        { name: "🌍 Mundo", value: "554", inline: true },
+        { name: "🧑‍💻 RSN", value: "Wenty", inline: true },
+        { name: "⚔️ Cbt", value: "76", inline: true },
+        { name: "📍 Local", value: "Varrock west bank", inline: false }
+      )
+      .setImage("https://www.runenation.org/images/varrockwestbank.png")
+      .setTimestamp();
+
+    message.reply({ embeds: [embed] });
+  }
+
   // !pix <valor>
   if (message.content.startsWith("!pix")) {
     // só quem tem a role CLOSE_ROLE_ID pode usar
