@@ -13,6 +13,7 @@ const {
   Events,
   EmbedBuilder,
 } = require("discord.js");
+const QRCode = require("qrcode"); // 👈 importa QRCode
 const apiRoutes = require("./routes/api");
 
 const app = express();
@@ -52,11 +53,10 @@ const config = {
   STAFF_ROLE_ID: process.env.STAFF_ROLE_ID,
   ORDERS_CHANNEL_ID: process.env.ORDERS_CHANNEL_ID,
   ROLE_TO_ASSIGN_ID: "1410666933669462176",
-  CLOSE_ROLE_ID: "1410524237009260545", // também usada como permissão para feedback
+  CLOSE_ROLE_ID: "1410524237009260545", // também usada como permissão para feedback e pix
   FEEDBACK_CHANNEL_ID: "1410747614143451196",
 };
 
-// Anti-duplicidade (no MESMO processo)
 const handledMessages = new Set();
 
 // Rotas da API
@@ -92,11 +92,9 @@ function starsFromRating(r) {
   return "⭐".repeat(r) + "☆".repeat(5 - r);
 }
 
-// Comando !close e !feedback
+// Comandos
 client.on("messageCreate", async (message) => {
   if (message.author.bot || !message.guild) return;
-
-  // anti-duplicidade local (se o handler for acidentalmente registrado 2x)
   if (handledMessages.has(message.id)) return;
 
   const member = await message.guild.members.fetch(message.author.id);
@@ -120,7 +118,7 @@ client.on("messageCreate", async (message) => {
     return;
   }
 
-  // !feedback → só staff pode abrir o painel
+  // !feedback
   if (message.content === "!feedback") {
     handledMessages.add(message.id);
     setTimeout(() => handledMessages.delete(message.id), 60_000);
@@ -145,9 +143,49 @@ client.on("messageCreate", async (message) => {
       components: [row],
     });
   }
+
+  // !pix <valor>
+  // !pix <valor>
+  if (message.content.startsWith("!pix")) {
+    if (!member.roles.cache.has(config.CLOSE_ROLE_ID)) {
+      return message.reply("❌ Você não tem permissão para usar este comando.");
+    }
+
+    const parts = message.content.split(" ");
+    if (parts.length < 2) {
+      return message.reply("❌ Use: `!pix <valor>`");
+    }
+
+    const valor = parseFloat(parts[1].replace(",", "."));
+    if (isNaN(valor) || valor <= 0) {
+      return message.reply("❌ Valor inválido.");
+    }
+
+    // 🔑 Dados do seu Pix
+    const chavePix = "16996369206";
+    const nome = "MARCIO LACERDA";
+    const cidade = "SAO PAULO";
+
+    const payload = gerarPayloadPix(chavePix, valor, nome, cidade);
+    const qrCodeDataUrl = await QRCode.toDataURL(payload, {
+      errorCorrectionLevel: "M",
+    });
+
+    await message.reply({
+      content: `💳 **Pagamento Pix**\n\n🔑 Chave Pix: \`${chavePix}\`\n💰 Valor: R$ ${valor.toFixed(
+        2
+      )}\n\n📲 Escaneie o QR Code abaixo:`,
+      files: [
+        {
+          attachment: Buffer.from(qrCodeDataUrl.split(",")[1], "base64"),
+          name: "pix.png",
+        },
+      ],
+    });
+  }
 });
 
-// Interações: Botões e Modais
+// Interações
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.inGuild()) return;
 
@@ -239,17 +277,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       await feedbackChannel.send({ embeds: [embed] });
 
-      // ✅ Responde ao usuário
       await interaction.reply({
         content: "✅ Obrigado pelo seu feedback!",
         ephemeral: true,
       });
 
-      // ✅ Remove botões da mensagem original
       if (interaction.message) {
         await interaction.message.edit({
           content: "📬 Feedback já enviado ✅",
-          components: [], // remove botões
+          components: [],
         });
       }
     } catch (error) {
@@ -263,3 +299,53 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
+// ---------------- PIX HELPERS ----------------
+function gerarPayloadPix(chave, valor, nome, cidade) {
+  function format(id, value) {
+    const length = String(value).length.toString().padStart(2, "0");
+    return id + length + value;
+  }
+
+  const merchantAccount = format("00", "BR.GOV.BCB.PIX") + format("01", chave);
+  const merchantCategoryCode = format("52", "0000");
+  const transactionCurrency = format("53", "986"); // BRL
+  const transactionAmount = valor ? format("54", valor.toFixed(2)) : "";
+  const countryCode = format("58", "BR");
+  const merchantName = format("59", nome);
+  const merchantCity = format("60", cidade);
+  const additionalData = format("62", format("05", "***"));
+
+  let payload =
+    format("00", "01") +
+    format("26", merchantAccount) +
+    merchantCategoryCode +
+    transactionCurrency +
+    transactionAmount +
+    countryCode +
+    merchantName +
+    merchantCity +
+    additionalData;
+
+  payload += "6304"; // campo do CRC
+
+  const crc = crc16(payload);
+  payload += crc;
+
+  return payload;
+}
+
+function crc16(payload) {
+  let polinomio = 0x1021;
+  let resultado = 0xffff;
+
+  for (let i = 0; i < payload.length; i++) {
+    resultado ^= payload.charCodeAt(i) << 8;
+    for (let j = 0; j < 8; j++) {
+      if ((resultado <<= 1) & 0x10000) resultado ^= polinomio;
+      resultado &= 0xffff;
+    }
+  }
+
+  return resultado.toString(16).toUpperCase().padStart(4, "0");
+}
