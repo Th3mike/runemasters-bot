@@ -21,6 +21,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://runemasters-bot.onrender.com",
   "https://runemasters-1.onrender.com",
+  "https://runemasters.shop",
 ];
 
 app.use(
