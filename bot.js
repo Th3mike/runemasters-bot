@@ -17,14 +17,24 @@ const QRCode = require("qrcode"); // 👈 importa QRCode
 const apiRoutes = require("./routes/api");
 
 const app = express();
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://runemasters-bot.onrender.com",
+  "https://runemasters-1.onrender.com",
+];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://runemasters-bot.onrender.com",
-      "https://runemasters-1.onrender.com/",
-      "*",
-    ],
+    origin: function (origin, callback) {
+      // permite requests sem origin (ex: curl, postman)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = `Acesso CORS negado para a origem ${origin}`;
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
   })
