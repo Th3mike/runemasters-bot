@@ -147,7 +147,7 @@ client.on("messageCreate", async (message) => {
   // !loc
   // !loc <mundo> <rsn> <cbt>
   if (message.content.startsWith("!loc")) {
-    const args = message.content.trim().split(/\s+/); // divide por espaços
+    const args = message.content.trim().split(/\s+/);
     if (args.length !== 4) {
       return message.reply(
         "❌ Uso correto: `!loc <mundo> <rsn> <cbt>`\nExemplo: `!loc 554 Wenty 76`"
@@ -176,17 +176,19 @@ client.on("messageCreate", async (message) => {
 
     const embed = new EmbedBuilder()
       .setColor(0x7289da)
-      .setTitle("Localização do jogador")
+      .setTitle("07 GP")
       .addFields(
         { name: "🌍 Mundo", value: mundo, inline: true },
         { name: "🧑‍💻 RSN", value: rsn, inline: true },
         { name: "⚔️ Cbt", value: cbt, inline: true },
-        { name: "📍 Local", value: "Varrock west bank", inline: false } // você pode tornar isso também customizável, se quiser
+        { name: "📍 Local", value: "Varrock west bank", inline: false }
       )
-      .setImage("https://www.runenation.org/images/varrockwestbank.png")
       .setTimestamp();
 
-    await message.reply({ embeds: [embed] });
+    await message.reply({
+      embeds: [embed],
+      files: ["https://www.runenation.org/images/varrockwestbank.png"],
+    });
   }
 
   // !pix <valor>
