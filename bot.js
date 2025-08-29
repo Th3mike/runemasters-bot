@@ -22,6 +22,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://runemasters-bot.onrender.com",
+      "https://runemasters-1.onrender.com/",
       "*",
     ],
     methods: ["GET", "POST"],
