@@ -35,7 +35,7 @@ module.exports = (client, cooldowns, config) => {
         ? "🎫 Pedido Registrado"
         : `📦 Novo Pedido - ${orderType.toUpperCase()}`,
       description: isTicket
-        ? `Olá <@${user.discordId}>, seu pedido foi registrado!\nNossa staff vai entrar em contato em breve.`
+        ? `Olá <@${user.discordId}>, seu pedido foi registrado!\nNossa staff <@&1410524237009260545> vai entrar em contato em breve.`
         : `Pedido de **${user.username}**`,
       thumbnail: { url: avatarUrl },
       fields: [],
