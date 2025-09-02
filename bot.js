@@ -89,28 +89,8 @@ if (process.env.RENDER) {
   }, 10 * 60 * 1000); // 10 minutos
 }
 
-client.once("ready", async () => {
+client.once("ready", () => {
   console.log(`Bot logado como ${client.user.tag}`);
-
-  try {
-    const channel = await client.channels.fetch(config.ORDERS_CHANNEL_ID);
-
-    if (channel && channel.isTextBased()) {
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId("create_order")
-          .setLabel("📝 Criar pedido agora")
-          .setStyle(ButtonStyle.Success)
-      );
-
-      await channel.send({
-        content: "📌 Deseja criar um pedido? Clique no botão abaixo!",
-        components: [row],
-      });
-    }
-  } catch (err) {
-    console.error("Erro ao enviar mensagem inicial no canal:", err);
-  }
 });
 
 // Utils
@@ -269,76 +249,6 @@ client.on("messageCreate", async (message) => {
 // Interações
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.inGuild()) return;
-
-    if (interaction.isButton() && interaction.customId === "create_order") {
-    const modal = new ModalBuilder()
-      .setCustomId("modal_create_order")
-      .setTitle("📋 Criar Pedido");
-
-    const typeInput = new TextInputBuilder()
-      .setCustomId("order_type")
-      .setLabel("Tipo de serviço (Quiver, Inferno, Outros)")
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder("Ex.: Quiver")
-      .setRequired(true);
-
-    const parsecInput = new TextInputBuilder()
-      .setCustomId("order_parsec")
-      .setLabel("Será por Parsec?")
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder("Sim ou Não")
-      .setRequired(true);
-
-    const detailsInput = new TextInputBuilder()
-      .setCustomId("order_details")
-      .setLabel("Mais detalhes do serviço")
-      .setStyle(TextInputStyle.Paragraph)
-      .setPlaceholder("Descreva o que precisa...")
-      .setRequired(false);
-
-    modal.addComponents(
-      new ActionRowBuilder().addComponents(typeInput),
-      new ActionRowBuilder().addComponents(parsecInput),
-      new ActionRowBuilder().addComponents(detailsInput)
-    );
-
-    await interaction.showModal(modal);
-  }
-
-  // --- Submissão do formulário ---
-  if (interaction.isModalSubmit() && interaction.customId === "modal_create_order") {
-    const type = interaction.fields.getTextInputValue("order_type");
-    const parsec = interaction.fields.getTextInputValue("order_parsec");
-    const details = interaction.fields.getTextInputValue("order_details");
-
-    try {
-      const staffChannel = await client.channels.fetch(config.ORDERS_CHANNEL_ID);
-
-      const embed = new EmbedBuilder()
-        .setColor(0x00ae86)
-        .setTitle("📥 Novo Pedido Criado")
-        .addFields(
-          { name: "Usuário", value: `${interaction.user}`, inline: false },
-          { name: "Tipo de Serviço", value: type, inline: true },
-          { name: "Parsec?", value: parsec, inline: true },
-          { name: "Detalhes", value: details || "Nenhum detalhe adicional." }
-        )
-        .setTimestamp();
-
-      await staffChannel.send({ embeds: [embed] });
-
-      await interaction.reply({
-        content: "✅ Seu pedido foi enviado com sucesso!",
-        ephemeral: true,
-      });
-    } catch (err) {
-      console.error("Erro ao processar pedido:", err);
-      await interaction.reply({
-        content: "❌ Ocorreu um erro ao enviar o pedido.",
-        ephemeral: true,
-      });
-    }
-  }
 
   if (interaction.isButton()) {
     if (
